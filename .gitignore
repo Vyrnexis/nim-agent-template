@@ -1,0 +1,24 @@
+# Nim compiler artifacts
+nimcache/
+bin/
+htmldocs/
+*.exe
+*.out
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Tooling and dependencies
+.nimble-paths
+deps/
+.atlas/
+
+# Editor and OS metadata
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
