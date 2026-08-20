@@ -15,8 +15,6 @@ htmldocs/
 deps/
 .atlas/
 
-# Local drafts
-FORUM_POST.md
 
 # Editor and OS metadata
 .vscode/
