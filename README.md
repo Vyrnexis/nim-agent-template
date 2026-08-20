@@ -105,7 +105,7 @@ All compilation tasks strictly emit executables to `./bin/` at the repository ro
 | `nim nimRelease` | GCC/Default | Host Native | `-d:release -d:danger --opt:speed -march=native -mtune=native` |
 | `nim nimPortable` | GCC/Default | Generic CPU | `-d:release --opt:size -mtune=generic -s` |
 | `nim nimDebug` | GCC/Default | Host Debug | `--debuginfo:on --assertions:on --stackTrace:on` |
-| `nim zigRelease` | Zig CC | Host Native | `-O3 -march=native` |
+| `nim zigRelease` | Zig CC | Host Native | `-d:release -d:danger --opt:speed -O3 -march=native` |
 | `nim zigPortable` | Zig CC | Generic CPU | `-d:release --opt:size -Oz -mcpu=baseline -s` |
 | `nim zigDebug` | Zig CC | Host Debug | `--debuginfo:on` |
 
@@ -135,7 +135,8 @@ All compilation tasks strictly emit executables to `./bin/` at the repository ro
 - `docs-gen`: Automated HTML documentation generation.
 - `format-code`: Nim source formatting via `nimpretty`.
 - `nim-api-design`: API design guidelines for public interfaces.
-- `nim-c-bindings` / `nim-c-wrappers`: C header binding and idiomatic wrapper patterns.
+- `nim-c-bindings`: C header binding and cross-platform native library integration.
+- `nim-c-wrappers`: Idiomatic high-level Nim wrappers around raw C bindings.
 - `nim-code-organization`: Module structuring and state isolation.
 - `nim-debugging`: Defect isolation, stack traces, and sanitizers.
 - `nim-defect-analysis`: Memory safety and crash audits.
