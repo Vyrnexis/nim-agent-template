@@ -268,21 +268,12 @@ bin           = @["${project_name}"]
 _NIMBLE_BIN_EOF_
     fi
 
-    cat << '_NIMBLE_TASKS_EOF_' >> "${project_name}.nimble"
+    cat << '_NIMBLE_DEPS_EOF_' >> "${project_name}.nimble"
 
 # Dependencies
 
 requires "nim >= 2.0.0"
-
-task test, "Run the full test suite":
-  exec "nim c -r --verbosity:0 tests/test_all.nim"
-
-task fmt, "Format all source files using nimpretty":
-  exec "nimpretty src/**/*.nim tests/**/*.nim"
-
-task docs, "Generate HTML documentation":
-  exec "nim doc --project --outdir:htmldocs src/" & project_name & ".nim"
-_NIMBLE_TASKS_EOF_
+_NIMBLE_DEPS_EOF_
   else
     # Initialize Atlas workspace
     if command -v atlas >/dev/null 2>&1; then
@@ -405,7 +396,7 @@ task nimDebug, "Build debug binary with stack traces and assertions":
 
 task zigRelease, "Build native host-optimized binary using Zig CC (O3, march=native)":
   ## Compiles native binary using Zig toolchain with -O3 optimization for host CPU.
-  selfExec "c --cc:clang --clang.exe:\"" & zigccExe & "\" --clang.linkerexe:\"" & zigccExe & "\" --passC:\"-O3 -march=native\" src/${project_name}.nim"
+  selfExec "c --cc:clang --clang.exe:\"" & zigccExe & "\" --clang.linkerexe:\"" & zigccExe & "\" -d:release -d:danger --opt:speed --passC:\"-O3 -march=native\" src/${project_name}.nim"
 
 task zigPortable, "Build portable binary for generic CPUs using Zig CC (stripped, baseline instructions)":
   ## Compiles stripped binary using Zig toolchain targeting generic baseline CPUs and size reduction.
@@ -421,7 +412,7 @@ task test, "Run test suite":
 
 task fmt, "Format codebase via nimpretty":
   ## Formats source and test files in-place.
-  selfExec "pretty --indent:2 src/${project_name}.nim"
+  exec "nimpretty --indent:2 src/${project_name}.nim"
 
 task docs, "Generate HTML documentation":
   ## Emits HTML documentation into htmldocs directory.
@@ -457,21 +448,34 @@ _MCP_CONFIG_EOF_
       cat << '_SKILL_BUILD_EOF_' > ".agents/skills/build/SKILL.md"
 ---
 name: build
-description: Compiles the project using one of the six standard configuration profiles.
+description: Compiles and builds the Nim project using standardized native host, generic CPU, and debug compilation profiles.
 ---
 
-# Build Profiles
+# Build & Compilation Profiles
 
-Execute the target compilation mode using `nim <task_name>`:
+All compilation tasks are managed via `config.nims` and strictly emit executables into `./bin/` at the repository root.
 
-1. `nim nimRelease`: Native host binary with `-d:release`, `-d:danger`, `--opt:speed`, `-march=native -mtune=native`.
-2. `nim nimPortable`: Generic CPU binary with `-d:release`, `--opt:size`, `-mtune=generic`, `--passL:"-s"`.
-3. `nim nimDebug`: Debug binary with `--debuginfo:on`, `--assertions:on`, `--lineTrace:on`, `--stackTrace:on`.
-4. `nim zigRelease`: Clang/Zig CC release binary with `-O3 -march=native`.
-5. `nim zigPortable`: Clang/Zig CC generic CPU binary with `-d:release`, `--opt:size`, `-Oz`, `-mcpu=baseline`, `-s`.
-6. `nim zigDebug`: Clang/Zig CC debug binary with `--debuginfo:on`.
+## Available Compilation Tasks
 
-All compiled outputs are strictly emitted to `./bin/`.
+Execute the desired build profile using `nim <task_name>`:
+
+1. `nim nimRelease`: Native host release binary (GCC/Default)
+   - Aggressive speed optimizations targeting host CPU: `-d:release -d:danger --opt:speed --passC:"-march=native -mtune=native"`.
+2. `nim nimPortable`: Generic CPU baseline portable binary (GCC/Default)
+   - Size-optimized, stripped binary compatible with all target CPUs: `-d:release --opt:size --passC:"-mtune=generic" --passL:"-s"`.
+3. `nim nimDebug`: Debug binary (GCC/Default)
+   - Diagnostics build with runtime symbols and line tracing: `--debuginfo:on --assertions:on --lineTrace:on --stackTrace:on`.
+4. `nim zigRelease`: Native host release binary (Zig CC)
+   - Native Clang/Zig toolchain build with -O3 optimizations: `--cc:clang -d:release -d:danger --opt:speed --passC:"-O3 -march=native"`.
+5. `nim zigPortable`: Generic CPU baseline portable binary (Zig CC)
+   - Stripped, size-optimized binary targeting baseline CPU model: `--cc:clang -d:release --opt:size --passC:"-Oz" --passC:"-mcpu=baseline" --passL:"-s"`.
+6. `nim zigDebug`: Debug binary (Zig CC)
+   - Clang/Zig CC debug build preserving debug symbols: `--cc:clang --debuginfo:on`.
+
+## Strict Build Rules & Boundaries
+- **Output Directory**: Never emit binaries into the project root or `src/`; all executables must output directly to `./bin/`.
+- **Default Mode**: Always default to release builds (`nimRelease` or `nimPortable`) for production and distribution.
+- **Debug Builds**: Use `nimDebug` or `zigDebug` strictly when actively diagnosing errors, stack traces, or assertion failures.
 _SKILL_BUILD_EOF_
 
       mkdir -p ".agents/skills/run-tests"
@@ -539,7 +543,7 @@ jobs:
 
       - name: Verify code formatting
         run: |
-          nimpretty --check src/
+          nimpretty --check src/*.nim
 
       - name: Run test suite
         run: |
@@ -602,7 +606,7 @@ Six optimized build modes are defined in \`config.nims\` and output to \`./bin/\
 | \`nim nimRelease\` | GCC/Default | Native Host Optimized | \`-d:release -d:danger --opt:speed -march=native\` |
 | \`nim nimPortable\` | GCC/Default | Generic Portable Size | \`-d:release --opt:size -mtune=generic -s\` |
 | \`nim nimDebug\` | GCC/Default | Full Debug & Diagnostics | \`--debuginfo:on --assertions:on --stackTrace:on\` |
-| \`nim zigRelease\` | Zig CC | Native Host Optimized | \`-O3 -march=native\` |
+| \`nim zigRelease\` | Zig CC | Native Host Optimized | \`-d:release -d:danger --opt:speed -O3 -march=native\` |
 | \`nim zigPortable\` | Zig CC | Generic Portable Size | \`-d:release --opt:size -Oz -mcpu=baseline -s\` |
 | \`nim zigDebug\` | Zig CC | Full Debug & Diagnostics | \`--debuginfo:on\` |
 
