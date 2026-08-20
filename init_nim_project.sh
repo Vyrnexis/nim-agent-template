@@ -69,6 +69,29 @@ check_prerequisite() {
   fi
 }
 
+# Detect default author name from Git configuration, environment, or system user.
+detect_default_author() {
+  local author=""
+
+  if command -v git >/dev/null 2>&1; then
+    author="$(git config --get user.name 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${author}" ]]; then
+    author="${GIT_AUTHOR_NAME:-${USER:-}}"
+  fi
+
+  if [[ -z "${author}" ]] && command -v whoami >/dev/null 2>&1; then
+    author="$(whoami 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${author}" ]]; then
+    author="Nim Developer"
+  fi
+
+  echo "${author}"
+}
+
 # Display command-line usage information.
 show_usage() {
   cat << 'EOF'
@@ -80,7 +103,7 @@ Options:
   -n, --name NAME          Project name (default: current directory name or my_nim_app)
   -t, --tooling TOOL       Package tool: 'nimble' or 'atlas' (default: nimble)
   -k, --kind KIND          Project kind: 'bin' or 'lib' (default: bin)
-  -a, --author AUTHOR      Author name (default: Vyrenxis)
+  -a, --author AUTHOR      Author name (default: auto-detected from git/system)
   -l, --license LICENSE    License type (default: MIT)
   -i, --in-place           Scaffold in current working directory instead of creating a subdirectory
   --no-skills              Skip copying agent skills into .agents/skills/
@@ -159,6 +182,9 @@ main() {
   local current_dir_name
   current_dir_name=$(basename "${PWD}")
 
+  local detected_author
+  detected_author=$(detect_default_author)
+
   local project_name=""
   local tool_choice=""
   local type_choice=""
@@ -172,7 +198,7 @@ main() {
     project_name=$(sanitize_identifier "${raw_name}")
     tool_choice=$([[ "${cli_tooling}" == "atlas" ]] && echo "2" || echo "1")
     type_choice=$([[ "${cli_kind}" == "lib" ]] && echo "2" || echo "1")
-    author_name="${cli_author:-Vyrenxis}"
+    author_name="${cli_author:-${detected_author}}"
     license_type="${cli_license:-MIT}"
     import_skills=$([[ "${cli_import_skills}" == "true" ]] && echo "Y" || echo "N")
     target_in_place="${cli_in_place}"
@@ -214,7 +240,7 @@ main() {
     type_choice=$(prompt_default "Choice (1 or 2)" "1")
 
     echo ""
-    author_name=$(prompt_default "Enter author name" "Vyrenxis")
+    author_name=$(prompt_default "Enter author name" "${detected_author}")
     license_type=$(prompt_default "Enter license type" "MIT")
 
     echo ""
