@@ -165,3 +165,5 @@ All compilation tasks strictly emit executables to `./bin/` at the repository ro
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+The skill folders under `skills/` that come from [planetis-m/skills](https://github.com/planetis-m/skills) are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) instead. See [skills/LICENSE-planetis-skills.md](skills/LICENSE-planetis-skills.md) for the list.
